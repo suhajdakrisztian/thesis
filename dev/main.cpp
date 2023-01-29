@@ -1,28 +1,45 @@
-#include <bits/stdc++.h>
+#include <functional>
+#include <iostream>
+#include <set>
+#include <vector>
+
+
+#define ARBITRARY_THRESHOLD 100'000
 
 namespace parallel_algorithms {
 
-#if __linux__
-constexpr auto PARALLEL_THRESHOLD = 250'000ULL;
-#elif __ANDROID__
-constexpr auto PARALLEL_THRESHOLD = 100'000ULL;
-#elif __APPLE__
-constexpr auto PARALLEL_THRESHOLD = 180'000ULL;
-#elif _WIN32
-constexpr auto PARALLEL_THRESHOLD = 10'000ULL;
-#else
-constexpr auto PARALLEL_THRESHOLD = 100'000ULL;
-#endif
+template <typename T>
+std::vector<std::vector<T>> split_vector(const std::vector<T>& vec) {
+  std::vector<std::vector<T>> outVec;
+  std::unordered_set<std::future<Iterator>> results;
+
+  size_t length = vec.size() / ARBITRARY_THRESHOLD;
+  size_t remain = vec.size() % ARBITRARY_THRESHOLD;
+
+  size_t begin = 0;
+  size_t end = 0;
+
+  for (size_t i = 0; i < std::min(ARBITRARY_THRESHOLD, vec.size()); ++i) {
+    end += (remain > 0) ? (length + !!(remain--)) : length;
+
+    //outVec.push_back(std::vector<T>(vec.begin() + begin, vec.begin() + end));
+
+    begin = end;
+  }
+
+  return outVec;
+}
 
 template <typename... Args>
 auto fold(Args... args) {
   return (args.get() + ...);
 }
 
-template <class Type, class Iterator>
-std::vector<Type> parallel_copy_if(Iterator begin, Iterator end,
-                                   Iterator destination_begin,
+template <class Type, class ForwardIterator>
+std::vector<Type> parallel_copy_if(ForwardIterator begin, ForwardIterator end,
+                                   ForwardIterator destination_begin,
                                    const std::function<bool>& func) {
+                                    
   const auto partition_count = (end - begin) / PARALLEL_THRESHOLD;
   std::unordered_set<std::future<Iterator>> results;
 
