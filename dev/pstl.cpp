@@ -1,8 +1,9 @@
+#include "pstl/execution_defs.h"
 #include <execution>
 #include <future>
+#include <iostream>
 #include <iterator>
 #include <vector>
-#include <iostream>
 
 namespace utils {
 
@@ -34,8 +35,9 @@ ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first, ForwardIter last,
   std ::vector<std ::vector<ForwardIter>> filtered_results(chunks);
   std ::vector<std ::shared_future<void>> futures(chunks);
 
-  for (int i = 0; i < chunks; ++i) {
-    std ::future<void> f = std ::async(std ::launch ::async, [&filtered_results, &ranges, i, &pred]() {
+  for (auto i = 0ul; i < chunks; i++) {
+    std ::future<void> f = std ::async(
+        std ::launch ::async, [&filtered_results, &ranges, i, &pred]() {
           for (auto it = ranges[i].first; it != ranges[i].second; ++it) {
             if (pred(*it)) {
               filtered_results[i].push_back(it);
@@ -45,9 +47,9 @@ ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first, ForwardIter last,
     futures[i] = f.share();
   }
 
-  ForwardIter result = last;
+  auto result = last;
 
-  for (int i = 0; i < chunks && result == last; ++i) {
+  for (auto i = 0ul; i < chunks && result == last; i++) {
     futures[i].wait();
 
     for (auto it = filtered_results[i].begin();
@@ -57,7 +59,6 @@ ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first, ForwardIter last,
       }
     }
   }
-
   return result;
 }
 
@@ -74,12 +75,12 @@ int main() {
   v[77777] = 7657;
   v[88888] = 312231;
 
-  auto res = find_if(
+  const auto res = find_if(
       std::execution::par, v.begin(), v.end(), 
       [](int i) { return i > 50; },
-      [counter = 0](int i) mutable {return ++counter == 5;});
+      [counter = 0](int i) mutable { return ++counter == 5; });
 
-      std::cout << *res << '\n';
+  std::cout << *res << '\n';
 
   return 0;
 }
