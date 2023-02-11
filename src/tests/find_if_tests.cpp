@@ -1,6 +1,6 @@
-#include <gtest/gtest.h>
+#include "../../src/p_find_if.h"
 
-#include "p_find_if.h"
+#include <gtest/gtest.h>
 
 TEST(FIND_IF, HasCorrectResult) {
   std::vector<int> v(100'000, 2);
@@ -20,9 +20,4 @@ TEST(FIND_IF, HasCorrectResult) {
       [counter = 0](int i) mutable { return ++counter == 5; });
 
   ASSERT_EQ(555, *res);
-}
-
-int main(int argc, char* argv[]) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
 }
