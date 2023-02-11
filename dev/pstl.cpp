@@ -4,31 +4,28 @@
 #include <vector>
 #include <iostream>
 
-namespace helpers {
+namespace utils {
 
-constexpr std ::size_t _Oversubscription_multiplier = 32;
+constexpr std::size_t _multiplier = 32;
 template <class _Diff>
-constexpr std ::size_t _Get_chunked_work_chunk_count(
-    const std ::size_t _Hw_threads, const _Diff _Count) {
-  const auto _Size_count = static_cast<std ::size_t>(_Count);
-  return std ::min(_Hw_threads * _Oversubscription_multiplier, _Size_count);
+constexpr std::size_t GetSubTaskCount(const _Diff _Count) {
+  const auto _sizeCount = static_cast<std ::size_t>(_Count);
+  const auto _coreCount = static_cast<std ::size_t>(std::thread::hardware_concurrency());
+  return std::min(_coreCount * _multiplier, _sizeCount);
 }
-}  // namespace helpers
+}  // namespace utils
 
-template <class ExecutionPolicy, class ForwardIter, class UnaryPredicate,
-          class Predicate>
-ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first, ForwardIter last,
-                    UnaryPredicate pred, Predicate fn) {
+template <class ExecutionPolicy, class ForwardIter, class UnaryPredicate, class Predicate>
+ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first, ForwardIter last, UnaryPredicate pred, Predicate fn) {
   size_t dist = std ::distance(first, last);
-  size_t chunks = helpers ::_Get_chunked_work_chunk_count(
-      std ::thread ::hardware_concurrency(), dist);
+  size_t chunks = utils::GetSubTaskCount(dist);
 
   std ::vector<std ::pair<ForwardIter, ForwardIter>> ranges(chunks);
 
   ForwardIter last_first = first;
   ForwardIter last_end;
 
-  for (int i = 0; i < chunks; ++i) {
+  for (auto i = 0ul; i < chunks; ++i) {
     ranges[i].first = last_first;
     std ::advance(last_first, dist / chunks);
     ranges[i].second = last_end = last_first;
@@ -38,8 +35,7 @@ ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first, ForwardIter last,
   std ::vector<std ::shared_future<void>> futures(chunks);
 
   for (int i = 0; i < chunks; ++i) {
-    std ::future<void> f = std ::async(
-        std ::launch ::async, [&filtered_results, &ranges, i, &pred]() {
+    std ::future<void> f = std ::async(std ::launch ::async, [&filtered_results, &ranges, i, &pred]() {
           for (auto it = ranges[i].first; it != ranges[i].second; ++it) {
             if (pred(*it)) {
               filtered_results[i].push_back(it);
@@ -72,6 +68,9 @@ int main() {
   v[22222] = 1233;
   v[33333] = 546464;
   v[55555] = 555;
+  v[77777] = 7657;
+  v[77778] = 7658;
+  v[77779] = 7659;
   v[77777] = 7657;
   v[88888] = 312231;
 
