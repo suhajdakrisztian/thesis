@@ -1,4 +1,5 @@
-#include "pstl/execution_defs.h"
+#pragma once
+
 #include <execution>
 #include <future>
 #include <iostream>
@@ -15,6 +16,8 @@ constexpr std::size_t GetSubTaskCount(const _Diff _Count) {
   return std::min(_coreCount * _multiplier, _sizeCount);
 }
 }  // namespace utils
+
+namespace pstl {
 
 template <class ExecutionPolicy, class ForwardIter, class UnaryPredicate, class Predicate>
 ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first, ForwardIter last, UnaryPredicate pred, Predicate fn) {
@@ -61,26 +64,4 @@ ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first, ForwardIter last,
   }
   return result;
 }
-
-int main() {
-  std::vector<int> v(100'000, 2);
-  v[5001] = 123;
-  v[11001] = 999;
-  v[22222] = 1233;
-  v[33333] = 546464;
-  v[55555] = 555;
-  v[77777] = 7657;
-  v[77778] = 7658;
-  v[77779] = 7659;
-  v[77777] = 7657;
-  v[88888] = 312231;
-
-  const auto res = find_if(
-      std::execution::par, v.begin(), v.end(), 
-      [](int i) { return i > 50; },
-      [counter = 0](int i) mutable { return ++counter == 5; });
-
-  std::cout << *res << '\n';
-  int i = 0;
-  return 0;
-}
+} //namespace pstl
