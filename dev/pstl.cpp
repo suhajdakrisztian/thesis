@@ -81,6 +81,6 @@ int main() {
       [counter = 0](int i) mutable { return ++counter == 5; });
 
   std::cout << *res << '\n';
-
+  int i = 0;
   return 0;
 }
