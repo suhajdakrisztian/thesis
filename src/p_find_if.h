@@ -12,15 +12,18 @@ constexpr std::size_t _multiplier = 32;
 template <class _Diff>
 constexpr std::size_t GetSubTaskCount(const _Diff _Count) {
   const auto _sizeCount = static_cast<std ::size_t>(_Count);
-  const auto _coreCount = static_cast<std ::size_t>(std::thread::hardware_concurrency());
+  const auto _coreCount =
+      static_cast<std ::size_t>(std::thread::hardware_concurrency());
   return std::min(_coreCount * _multiplier, _sizeCount);
 }
 }  // namespace utils
 
 namespace pstl {
 
-template <class ExecutionPolicy, class ForwardIter, class UnaryPredicate, class Predicate>
-ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first, ForwardIter last, UnaryPredicate pred, Predicate fn) {
+template <class ExecutionPolicy, class ForwardIter, class UnaryPredicate,
+          class Predicate>
+ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first, ForwardIter last,
+                    UnaryPredicate pred, Predicate fn) {
   size_t dist = std ::distance(first, last);
   size_t chunks = utils::GetSubTaskCount(dist);
 
@@ -55,8 +58,7 @@ ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first, ForwardIter last,
   for (auto i = 0ul; i < chunks && result == last; i++) {
     futures[i].wait();
 
-    for (auto it = filtered_results[i].begin();
-         it != filtered_results[i].end() && result == last; ++it) {
+    for (auto it = filtered_results[i].begin(); it != filtered_results[i].end() && result == last; ++it) {
       if (fn(**it)) {
         result = *it;
       }
@@ -64,4 +66,4 @@ ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first, ForwardIter last,
   }
   return result;
 }
-} //namespace pstl
+}  // namespace pstl
