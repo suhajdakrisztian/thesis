@@ -1,8 +1,8 @@
 #include "p_find_if.h"
 
-#include <vector>
-#include <iostream>
 #include <execution>
+#include <iostream>
+#include <vector>
 
 int main() {
   std::vector<int> v(100'000, 2);
@@ -17,10 +17,10 @@ int main() {
   v[77777] = 7657;
   v[88888] = 312231;
 
-  const auto res = pstl::find_if(
-      std::execution::par, v.begin(), v.end(), 
-      [](int i) { return i > 50; },
-      [counter = 0](int i) mutable { return ++counter == 5; });
+  const auto res = parallel::find_if(
+      std::execution::par, v.begin(), v.end(), [](int i) { return i > 50; },
+      [counter = 0](int i) mutable { return ++counter == 5; }
+  );
 
   std::cout << *res << '\n';
   return 0;

@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-TEST(FIND_IF, HasCorrectResult) {
+TEST(FIND_IF, ReturnsCorrectNumber) {
   std::vector<int> v(100'000, 2);
   v[5001] = 123;
   v[11001] = 999;
@@ -15,9 +15,19 @@ TEST(FIND_IF, HasCorrectResult) {
   v[77777] = 7657;
   v[88888] = 312231;
 
-  const auto res = pstl::find_if(
+  const auto res = parallel::find_if(
       std::execution::par, v.begin(), v.end(), [](int i) { return i > 50; },
       [counter = 0](int i) mutable { return ++counter == 5; });
 
-  ASSERT_EQ(555, *res);
+  EXPECT_EQ(555, *res);
+}
+
+TEST(FIND_IF, ReturnsEndWhenNoElement) {
+  std::vector<int> v(100'000, 2);
+
+  const auto res = parallel::find_if(
+      std::execution::par, v.begin(), v.end(), [](int i) { return i > 50; },
+      [counter = 0](int i) mutable { return ++counter == 5; });
+
+  EXPECT_EQ(v.end(), res);
 }

@@ -16,54 +16,64 @@ constexpr std::size_t GetSubTaskCount(const _Diff _Count) {
       static_cast<std ::size_t>(std::thread::hardware_concurrency());
   return std::min(_coreCount * _multiplier, _sizeCount);
 }
+
 }  // namespace utils
 
-namespace pstl {
+namespace parallel {
 
 template <class ExecutionPolicy, class ForwardIter, class UnaryPredicate,
           class Predicate>
-ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first, ForwardIter last,
-                    UnaryPredicate pred, Predicate fn) {
-  size_t dist = std ::distance(first, last);
-  size_t chunks = utils::GetSubTaskCount(dist);
+ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first,
+                      ForwardIter last, UnaryPredicate pred, Predicate fn) {
 
-  std ::vector<std ::pair<ForwardIter, ForwardIter>> ranges(chunks);
+  const auto element_count = std::distance(first, last);
+  const auto task_count = utils::GetSubTaskCount(element_count);
+  const auto step_size = element_count / task_count;
+
+  std ::vector<std ::pair<ForwardIter, ForwardIter>> ranges(task_count);
 
   ForwardIter last_first = first;
   ForwardIter last_end;
 
-  for (auto i = 0ul; i < chunks; ++i) {
+  /*
+  A kovetkezo reszre akartam mas implementaciot adni,de nagyon furcsan viselkedik
+  ha a async-es reszben akarom advanceolni az iteratorokat, akkor neha (nem ertem miert) rossz eredmenyt ad
+
+  */
+  auto fst = first;
+  auto lst = std::next(fst, step_size);
+
+  for (auto i = 0ul; i < task_count; ++i) {
     ranges[i].first = last_first;
-    std ::advance(last_first, dist / chunks);
+    std ::advance(last_first, step_size);
     ranges[i].second = last_end = last_first;
-  }
+  } 
 
-  std ::vector<std ::vector<ForwardIter>> filtered_results(chunks);
-  std ::vector<std ::shared_future<void>> futures(chunks);
+  std::vector<std::vector<ForwardIter>> filtered_results(task_count);
+  std::vector<std::shared_future<void>> tasks(task_count);
 
-  for (auto i = 0ul; i < chunks; i++) {
-    std ::future<void> f = std ::async(
-        std ::launch ::async, [&filtered_results, &ranges, i, &pred]() {
-          for (auto it = ranges[i].first; it != ranges[i].second; ++it) {
+  for (auto i = 0ul; i < task_count; i++) {
+
+    tasks[i] = std::async(std::launch::async,
+        [&filtered_results, &ranges,i, &pred]() {
+          for (auto it = ranges[i].first; it < ranges[i].second; ++it) {
             if (pred(*it)) {
               filtered_results[i].push_back(it);
             }
           }
         });
-    futures[i] = f.share();
+        std::advance(fst, step_size);
+        std::advance(lst, step_size);
   }
 
-  auto result = last;
-
-  for (auto i = 0ul; i < chunks && result == last; i++) {
-    futures[i].wait();
-
-    for (auto it = filtered_results[i].begin(); it != filtered_results[i].end() && result == last; ++it) {
+  for (auto i = 0ul; i < task_count; i++) {
+    tasks[i].wait();
+    for (auto it = filtered_results[i].begin(); it < filtered_results[i].end(); ++it) {
       if (fn(**it)) {
-        result = *it;
+        return *it;
       }
     }
   }
-  return result;
+  return last;
 }
 }  // namespace pstl
