@@ -10,10 +10,10 @@
 
 namespace parallel {
 
-template <class ExecutionPolicy, class ForwardIter, class UnaryPredicate,
+template <class ExecutionPolicy, class ForwardIter, class OutputIter, class UnaryPredicate,
           class Predicate>
-ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first,
-                      ForwardIter last, UnaryPredicate pred, Predicate fn) {
+ForwardIter copy_if(ExecutionPolicy&& exec, ForwardIter first,
+                      ForwardIter last, OutputIter dest, UnaryPredicate pred, Predicate fn) {
 
   const auto element_count = std::distance(first, last);
   const auto task_count = utils::GetSubTaskCount(element_count);
@@ -23,14 +23,6 @@ ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first,
 
   ForwardIter last_first = first;
   ForwardIter last_end;
-
-  /*
-  A kovetkezo reszre akartam mas implementaciot adni,de nagyon furcsan viselkedik
-  ha a async-es reszben akarom advanceolni az iteratorokat, akkor neha (nem ertem miert) rossz eredmenyt ad
-
-  */
-  auto fst = first;
-  auto lst = std::next(fst, step_size);
 
   for (auto i = 0ul; i < task_count; ++i) {
     ranges[i].first = last_first;
@@ -51,18 +43,18 @@ ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first,
             }
           }
         });
-        std::advance(fst, step_size);
-        std::advance(lst, step_size);
   }
 
   for (auto i = 0ul; i < task_count; i++) {
     tasks[i].wait();
     for (auto it = filtered_results[i].begin(); it < filtered_results[i].end(); ++it) {
       if (fn(**it)) {
-        return *it;
+        *dest = **it;
+        dest++;
       }
     }
   }
-  return last;
+  return dest;
 }
-}  // namespace pstl
+
+} // parallel

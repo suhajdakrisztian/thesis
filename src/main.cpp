@@ -1,4 +1,5 @@
 #include "p_find_if.h"
+#include "p_copy_if.h"
 
 #include <execution>
 #include <iostream>
@@ -17,11 +18,11 @@ int main() {
   v[77777] = 7657;
   v[88888] = 312231;
 
-  const auto res = parallel::find_if(
-      std::execution::par, v.begin(), v.end(), [](int i) { return i > 50; },
-      [counter = 0](int i) mutable { return ++counter == 5; }
-  );
+  std::vector<int> result;
 
-  std::cout << *res << '\n';
+  const auto res = parallel::copy_if(
+      std::execution::par, v.begin(), v.end(),result.end() ,[](int i) { return i > 50; },
+      [counter = 0](int i) mutable { return ++counter >= 5; });
+
   return 0;
 }
