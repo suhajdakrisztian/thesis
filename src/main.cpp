@@ -1,5 +1,5 @@
-#include "p_find_if.h"
 #include "p_copy_if.h"
+#include "p_find_if.h"
 
 #include <execution>
 #include <iostream>
@@ -18,10 +18,11 @@ int main() {
   v[77777] = 7657;
   v[88888] = 312231;
 
-  std::vector<int> result;
+  std::vector<int> res;
 
-  const auto res = parallel::copy_if(
-      std::execution::par, v.begin(), v.end(),result.end() ,[](int i) { return i > 50; },
+  parallel::PSTL<std::vector<int>::iterator> p;
+  auto qqq = p.copy_if(
+      std::execution::par, v.begin(), v.end(),std::back_inserter(res), [](int i) { return i > 50; },
       [counter = 0](int i) mutable { return ++counter >= 5; });
 
   return 0;

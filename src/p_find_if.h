@@ -27,8 +27,8 @@ ForwardIter find_if(ExecutionPolicy&& exec, ForwardIter first,
   /*
   A kovetkezo reszre akartam mas implementaciot adni,de nagyon furcsan viselkedik
   ha a async-es reszben akarom advanceolni az iteratorokat, akkor neha (nem ertem miert) rossz eredmenyt ad
-
   */
+ 
   auto fst = first;
   auto lst = std::next(fst, step_size);
 

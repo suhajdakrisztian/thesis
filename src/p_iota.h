@@ -16,7 +16,7 @@ namespace parallel {
       std::vector<std::future<void>> tasks(chunks);
 
       auto current_begin = first;
-      for(size_t i = 0; i < chunks; ++ i) {
+      for(auto i = 0; i < chunks; ++ i) {
 
         auto startIt = std::next(current_begin, i * chunkLen);
         auto endIt = std::min(last, std::next(startIt, chunkLen));
