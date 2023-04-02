@@ -1,8 +1,11 @@
-#include <vector>
-#include "pstl_find_if.h"
-#include "pstl_iota.h"
+#include "iterator.h"
+#include "p_find_if.h"
+#include "p_iota.h"
+
+
 #include <chrono>
 #include <cassert>
+#include <vector>
 
 int main() {
 /*
@@ -25,7 +28,7 @@ int main() {
           [](int i) { return i > 50; },
           [counter = 0](int i) mutable { return ++ counter >= 5; });
 
-  std::cout << *res << std::endl;*/
+  std::cout << *res << std::endl;
 
   //std::vector<int> benchmark {- 10, - 9, - 8, - 7, - 6, - 5, - 4, - 3, - 2, - 1};
   //std::vector<int> vec(15);
@@ -51,11 +54,28 @@ int main() {
   auto ps_int = duration_cast<std::chrono::milliseconds>(tp2 - tp1);
 
   std::cout << ls_int.count() << std::endl << ps_int.count();
-
+  */
   //assert(vec.size() == 100);
   //assert(vec.front() == 1);
   //assert(vec.back() == 100);
   //assert(std::accumulate(vec.begin(), vec.end(), 0) == 5050);
+
+
+  std::vector<std::vector<int>> v {{20},
+                                   {1, 7, 9},
+                                   {5, 6, 2},
+                                   {1, 2, 3}};
+  std::vector<std::vector<std::string>> vv {{"20"},
+                                            {"1", "7", "99"},
+                                            {"5,6,2"},
+                                            {"1", "2", "33"}};
+  //LambdaFilter lf(v, [](int a) {return a % 2;});
+  LambdaFilter lfs(vv, [](std::string a) { return a.size() == 2; });
+
+/*  for(auto iterator = lfs.get_values().begin(); iterator < lfs.get_values().end(); iterator++ ) {
+    std::cout << *iterator << std::endl;
+  }
+  */
 
   return 0;
 }

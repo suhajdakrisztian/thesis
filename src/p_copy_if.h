@@ -17,28 +17,6 @@ private:
   std::vector<std::shared_future<void>> _tasks;
 
 public:
-  struct Iterator {
-    Iterator(ForwardIter ptr) : m_ptr(ptr) {}
-    //ForwardIter &operator*() const { return *m_ptr; }
-
-    // Prefix increment
-    Iterator &operator++() {
-      m_ptr++;
-      return *this;
-    }
-
-    friend bool operator==(const ForwardIter &a, const ForwardIter &b) {
-      return a.m_ptr == b.m_ptr;
-    };
-
-    friend bool operator!=(const ForwardIter &a, const ForwardIter &b) {
-      return a.m_ptr != b.m_ptr;
-    };
-
-  private:
-    ForwardIter m_ptr;
-  };
-
   PSTL() = default;
   Iterator begin() { return Iterator(*_final_results.front().begin()); }
   Iterator end() { return Iterator(*_final_results.back().end()); }
