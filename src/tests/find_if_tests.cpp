@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 TEST(FIND_IF, ReturnsCorrectNumber) {
+
   std::vector<int> v(100'000, 2);
   v[5001] = 123;
   v[11001] = 999;
@@ -15,7 +16,7 @@ TEST(FIND_IF, ReturnsCorrectNumber) {
   v[77777] = 7657;
   v[88888] = 312231;
 
-  const auto res = parallel::find_if(
+  auto res = parallel::find_if(
       std::execution::par, v.begin(), v.end(), [](int i) { return i > 50; },
       [counter = 0](int i) mutable { return ++counter == 5; });
 
@@ -23,9 +24,10 @@ TEST(FIND_IF, ReturnsCorrectNumber) {
 }
 
 TEST(FIND_IF, ReturnsEndWhenNoElement) {
+
   std::vector<int> v(100'000, 2);
 
-  const auto res = parallel::find_if(
+  auto res = parallel::find_if(
       std::execution::par, v.begin(), v.end(), [](int i) { return i > 50; },
       [counter = 0](int i) mutable { return ++counter == 5; });
 
