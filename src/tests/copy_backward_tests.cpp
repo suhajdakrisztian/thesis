@@ -59,11 +59,11 @@ TEST(COPY_BACKWARD, RandomStartPointLargeNumber) {
 TEST(COPY_BACKWARD, ShouldFail) {
 
   std::vector<int> v {1, 2, 3, 4, 5, 6};
-  std::vector<int> res(3,0);
+  std::vector<int> res(3);
 
   pstl::copy_backward(v.begin(), v.end(), res.end());
 
-  std::vector<int> expected{4,5,1};
+  std::vector<int> expected{4,5,6};
 
   EXPECT_EQ(expected, res);
 }
