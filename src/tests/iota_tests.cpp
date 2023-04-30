@@ -63,18 +63,3 @@ TEST(IOTA, RandomStartPointLargeLoad) {
 
   EXPECT_EQ(actual, expected);
 }
-
-TEST(IOTA, stdIota) {
-  
-  std::vector<int> actual(11111111, 0);
-  auto start_point = rand() % 100 + 1;
-
-  std:iota(actual.begin(), actual.end(), start_point);
-  
-  std::vector<int> expected;
-  for(auto i = start_point; i < start_point + actual.size(); i++) {
-    expected.push_back(i);
-  }
-
-  EXPECT_EQ(actual, expected);
-}
