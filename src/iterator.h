@@ -1,25 +1,34 @@
+#pragma once
+
 #include <iterator>
 #include <ranges>
 #include <vector>
 #include <iostream>
 #include <string>
+#include <type_traits>
 
-template<class ForwardIter, class UnaryPred>
+template<class ForwardIter, class Predicate> requires std::forward_iterator<ForwardIter>
 class LambdaFilter {
 private:
     //std::ranges::filter_view<std::ranges::join_view<std::ranges::ref_view<std::vector<std::vector<ForwardIter>>>>, UnaryPred> _values;
     std::vector<ForwardIter> _raw_values;
-
 public:
-    LambdaFilter(std::vector<std::vector<ForwardIter>> results, UnaryPred pred) {
-        auto filtered_elements = results | std::ranges::views::join | std::views::filter(pred);
+    LambdaFilter(const std::vector<std::vector<ForwardIter>>& results, Predicate pred) {
+        auto filtered_elements = results | std::ranges::views::join;
+
         for(auto element: filtered_elements) {
-            _raw_values.push_back(element);
+            if(pred(*element)) {
+                _raw_values.push_back(element);
+            }
         }
     }
 
     [[nodiscard]] auto &get_values() const {
         return _raw_values;
+    }
+
+    size_t size() const {
+        return _raw_values.size();
     }
 
     struct Iterator {
@@ -29,13 +38,11 @@ public:
 
         ForwardIter *operator->() { return m_ptr; }
 
-        // Prefix increment
         Iterator &operator++() {
             m_ptr ++;
             return *this;
         }
 
-        // Postfix increment
         Iterator operator++(int) {
             Iterator tmp = *this;
             ++ (*this);

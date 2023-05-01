@@ -11,14 +11,12 @@
 
 namespace parallel {
 
-    template<class ForwardIter, class ValueType>
+    template<class ForwardIter, class ValueType> requires std::forward_iterator<ForwardIter> && std::integral<ValueType>
     void iota(ForwardIter begin, ForwardIter end, ValueType value) {
 
-      //some smart checks should happen here regarding eligibility for parallel execution
-
-      const auto element_count = std::distance(begin, end);
-      const auto task_count = 7; //this should be refined to some actual calculation
-      const auto step_size = element_count / task_count;
+        const auto element_count = static_cast<size_t>(std::distance(begin, end));
+        const auto task_count = element_count < 10'000'000 ? 1: element_count / 10'000'000;
+        const auto step_size = element_count / task_count;
 
       std::vector<std::pair<ForwardIter, ForwardIter>> ranges(task_count);
       std::vector<ValueType> numbers(task_count);

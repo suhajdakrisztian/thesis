@@ -1,71 +1,79 @@
 #pragma once
 
-#include "utils.h"
+#include "iterator.h"
 
-#include <execution>
-#include <future>
-#include <iostream>
-#include <iterator>
+#include <thread>
 #include <vector>
+#include <future>
 
-namespace parallel {
+namespace pstl {
 
-template <class ForwardIter> class PSTL {
-private:
-  std::vector<std::vector<ForwardIter>> _filtered_results;
-  std::vector<std::vector<ForwardIter>> _final_results;
-  std::vector<std::shared_future<void>> _tasks;
+    template<typename ForwardIter,
+            typename OutputIter,
+            typename UnaryPredicate,
+            typename Predicate>
+            requires std::forward_iterator<ForwardIter> && std::output_iterator<OutputIter, typename std::iterator_traits<ForwardIter>::value_type> &&
+            std::predicate<UnaryPredicate, typename std::iterator_traits<ForwardIter>::value_type>
+            && std::same_as<std::invoke_result_t<UnaryPredicate, typename std::iterator_traits<ForwardIter>::value_type>, bool>
 
-public:
-  PSTL() = default;
-  Iterator begin() { return Iterator(*_final_results.front().begin()); }
-  Iterator end() { return Iterator(*_final_results.back().end()); }
+    OutputIter copy_if(ForwardIter first,
+                       ForwardIter last,
+                       OutputIter dest,
+                       UnaryPredicate pred,
+                       Predicate fn) {
 
-  template <class ExecutionPolicy, class OutputIter, class UnaryPredicate, class Predicate>
-  OutputIter copy_if(ExecutionPolicy &&exec, ForwardIter first,
-                      ForwardIter last, OutputIter dest, UnaryPredicate pred, Predicate fn) {
+        const auto element_count = static_cast<size_t>(std::distance(first, last));
+        const auto cores = static_cast<size_t>(std::thread::hardware_concurrency());
+        const auto task_count = element_count < 100000 ? 1 : element_count / 50000;
+        const auto step_size = element_count / task_count;
 
-    const auto element_count = std::distance(first, last);
-    const auto task_count = utils::GetSubTaskCount(element_count);
-    const auto step_size = element_count / task_count;
+        std::vector<std::pair<ForwardIter, ForwardIter>> ranges(task_count);
 
-    std::vector<std::pair<ForwardIter, ForwardIter>> ranges(task_count);
+        ForwardIter last_first = first;
+        ForwardIter last_end;
 
-    ForwardIter last_first = first;
-    ForwardIter last_end;
-
-    for (auto i = 0ul; i < task_count; ++i) {
-      ranges[i].first = last_first;
-      std::advance(last_first, step_size);
-      ranges[i].second = last_end = last_first;
-    }
-
-    _filtered_results.resize(task_count);
-    _tasks.resize(task_count);
-    _final_results.resize(task_count);
-
-    for (auto i = 0ul; i < task_count; i++) {
-      _tasks[i] = std::async(std::launch::async, [this, &ranges, i, &pred]() {
-        for (auto it = ranges[i].first; it < ranges[i].second; ++it) {
-          if (pred(*it)) {
-            _filtered_results[i].push_back(it);
-          }
+        for(auto i = 0ul; i < task_count; ++ i) {
+            ranges[i].first = last_first;
+            std::advance(last_first, step_size);
+            ranges[i].second = last_end = last_first;
         }
-      });
-    }
 
-    for (auto i = 0ul; i < task_count; i++) {
-      _tasks[i].wait();
-      for (auto it = _filtered_results[i].begin(); it < _filtered_results[i].end(); ++it) {
-        if (fn(**it)) {
-          *dest = **it;
-          dest++;
-          ;_final_results[i].push_back(*it);
+        ranges.back().second = last;
+
+        std::vector<std::vector<ForwardIter>> filtered_results(task_count);
+        std::vector<std::shared_future<void>> tasks(task_count);
+
+        for(auto i = 0ul; i < task_count; i ++) {
+            tasks[i] = std::async(std::launch::async,
+                                  [&filtered_results, &ranges, i, &pred]() {
+                                      for(auto it = ranges[i].first; it < ranges[i].second; ++ it) {
+                                          if(pred(*it)) {
+                                              filtered_results[i].push_back(it);
+                                          }
+                                      }
+                                  });
         }
-      }
-    }
-    return dest;
-  }
-};
 
-} // namespace parallel
+        OutputIter result = dest;
+
+        for(auto& task: tasks) {
+            task.wait();
+        }
+
+        LambdaFilter filtered(filtered_results, fn);
+
+        for(auto iter = filtered.begin(); iter < filtered.end(); ++ iter) {
+            *(result++) = **iter;
+        }
+/*
+        for(auto i = 0ul; i < task_count; i ++) {
+            tasks[i].wait();
+            for(auto it = filtered_results[i].begin(); it < filtered_results[i].end(); ++ it) {
+                if(fn(**it)) {
+                    *(result++) = **it;
+                }
+            }
+        }*/
+        return result;
+    }
+}
