@@ -8,74 +8,20 @@
 #include <vector>
 
 int main() {
-/*
-  std::vector<int> v(100, 2);
-  v[5] = 123;
-  v[12] = 999;
-  v[17] = 1233;
-  v[23] = 546464;
-  v[45] = 555;
-  v[66] = 7657;
-  v[77] = 7658;
-  v[78] = 7659;
-  v[79] = 7655;
-  v[93] = 312231;
+    std::vector<int> v {1, 2, 3, 4, 5, 6};
+    std::vector<int> res(3);
 
-  auto res = parallel::find_if(
-          std::execution::par,
-          v.begin(),
-          v.end(),
-          [](int i) { return i > 50; },
-          [counter = 0](int i) mutable { return ++ counter >= 5; });
+    //pstl::copy_backward(v.begin(), v.end(), res.end());
 
-  std::cout << *res << std::endl;
+    for(const auto& elem: res) {
+      std::cout << elem << std::endl;
+    }
 
-  //std::vector<int> benchmark {- 10, - 9, - 8, - 7, - 6, - 5, - 4, - 3, - 2, - 1};
-  //std::vector<int> vec(15);
-  //parallel::iota(vec.begin(), vec.end(), -20);
-  //assert(benchmark == vec);
+    std::copy_backward(v.begin(), v.end(), res.end());
 
-  using std::chrono::high_resolution_clock;
-  using std::chrono::duration;
-
-  auto tl1 = high_resolution_clock::now();
-  std::vector<int> linear(200'000);
-  std::iota(linear.begin(), linear.end(), 1);
-  auto tl2 = high_resolution_clock::now();
-
-  auto ls_int = duration_cast<std::chrono::milliseconds>(tl2 - tl1);
-  linear.clear();
-
-  auto tp1 = high_resolution_clock::now();
-  std::vector<int> vec(200'000);
-  parallel::iota(vec.begin(), vec.end(), 1);
-  auto tp2 = high_resolution_clock::now();
-
-  auto ps_int = duration_cast<std::chrono::milliseconds>(tp2 - tp1);
-
-  std::cout << ls_int.count() << std::endl << ps_int.count();
-  */
-  //assert(vec.size() == 100);
-  //assert(vec.front() == 1);
-  //assert(vec.back() == 100);
-  //assert(std::accumulate(vec.begin(), vec.end(), 0) == 5050);
-
-
-  std::vector<std::vector<int>> v {{20},
-                                   {1, 7, 9},
-                                   {5, 6, 2},
-                                   {1, 2, 3}};
-  std::vector<std::vector<std::string>> vv {{"20"},
-                                            {"1", "7", "99"},
-                                            {"5,6,2"},
-                                            {"1", "2", "33"}};
-  //LambdaFilter lf(v, [](int a) {return a % 2;});
-  LambdaFilter lfs(vv, [](std::string a) { return a.size() == 2; });
-
-/*  for(auto iterator = lfs.get_values().begin(); iterator < lfs.get_values().end(); iterator++ ) {
-    std::cout << *iterator << std::endl;
-  }
-  */
+    for(auto r: res) {
+        std::cout << r << " ";
+    }
 
   return 0;
 }

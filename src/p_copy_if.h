@@ -5,22 +5,23 @@
 #include <thread>
 #include <vector>
 #include <future>
+#include <type_traits>
 
 namespace pstl {
-
     template<typename ForwardIter,
             typename OutputIter,
             typename UnaryPredicate,
             typename Predicate>
-            requires std::forward_iterator<ForwardIter> && std::output_iterator<OutputIter, typename std::iterator_traits<ForwardIter>::value_type> &&
+            requires std::forward_iterator<ForwardIter> && 
+            std::output_iterator<OutputIter, typename std::iterator_traits<ForwardIter>::value_type> &&
             std::predicate<UnaryPredicate, typename std::iterator_traits<ForwardIter>::value_type>
             && std::same_as<std::invoke_result_t<UnaryPredicate, typename std::iterator_traits<ForwardIter>::value_type>, bool>
-
     OutputIter copy_if(ForwardIter first,
                        ForwardIter last,
                        OutputIter dest,
                        UnaryPredicate pred,
-                       Predicate fn) {
+                       Predicate fn
+                      ) {
 
         const auto element_count = static_cast<size_t>(std::distance(first, last));
         const auto cores = static_cast<size_t>(std::thread::hardware_concurrency());
@@ -29,13 +30,13 @@ namespace pstl {
 
         std::vector<std::pair<ForwardIter, ForwardIter>> ranges(task_count);
 
-        ForwardIter last_first = first;
-        ForwardIter last_end;
+        ForwardIter left_end_of_window = first;
+        ForwardIter right_end_of_window;
 
         for(auto i = 0ul; i < task_count; ++ i) {
-            ranges[i].first = last_first;
-            std::advance(last_first, step_size);
-            ranges[i].second = last_end = last_first;
+            ranges[i].first = left_end_of_window;
+            std::advance(left_end_of_window, step_size);
+            ranges[i].second = right_end_of_window = left_end_of_window;
         }
 
         ranges.back().second = last;
@@ -53,27 +54,14 @@ namespace pstl {
                                       }
                                   });
         }
-
         OutputIter result = dest;
-
         for(auto& task: tasks) {
             task.wait();
         }
-
         LambdaFilter filtered(filtered_results, fn);
-
         for(auto iter = filtered.begin(); iter < filtered.end(); ++ iter) {
             *(result++) = **iter;
         }
-/*
-        for(auto i = 0ul; i < task_count; i ++) {
-            tasks[i].wait();
-            for(auto it = filtered_results[i].begin(); it < filtered_results[i].end(); ++ it) {
-                if(fn(**it)) {
-                    *(result++) = **it;
-                }
-            }
-        }*/
         return result;
     }
 }

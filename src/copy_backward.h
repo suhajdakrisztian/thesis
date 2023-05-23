@@ -6,30 +6,32 @@
 #include<thread>
 
 namespace pstl {
+    template<class BidirectionalIter> requires std::bidirectional_iterator<BidirectionalIter>
+    BidirectionalIter copy_backward(BidirectionalIter first, BidirectionalIter last, BidirectionalIter dest) {
 
-    template<class BidirectionalIter>
-    BidirectionalIter copy_backward(BidirectionalIter begin, BidirectionalIter end, BidirectionalIter dest) {
-
-        const auto element_count = std::distance(begin, end);
-        const auto task_count = 2;
+        const auto element_count = static_cast<size_t>(std::distance(first, last));
+        const auto task_count = element_count < 100'000 ? 1 : element_count / 50'000;
         const auto step_size = element_count / task_count;
 
         std::vector<std::pair<BidirectionalIter, BidirectionalIter>> ranges(task_count);
         std::vector<BidirectionalIter> starting_points(task_count);
 
         auto starting_point = dest;
-        auto last_first = begin;
-        BidirectionalIter last_end;
+        auto left_end_of_window = first;
+        BidirectionalIter right_end_of_window;
 
         for(auto i = 0ul; i < task_count; ++ i) {
-            ranges[i].first = last_first;
-            std::advance(last_first, step_size);
-            ranges[i].second = last_end = last_first;
+            ranges[i].first = left_end_of_window;
+            std::advance(left_end_of_window, step_size);
+
+            ranges[i].second = right_end_of_window = left_end_of_window;
+
             starting_points[task_count - i - 1] = starting_point;
-            starting_point -= step_size;
+            std::advance(starting_point, -step_size);
         }
 
-        //pstl::FuturePool future_pool{};
+
+        ranges.back().second = last;
 
         std::vector<std::future<void>> futures(task_count);
 
@@ -43,16 +45,10 @@ namespace pstl {
                     *(--starting_points[i]) = *(--last);
                 }
             });
-
-            //future_pool.submit_task(future);
         }
-
         for(auto &future: futures) {
             future.wait();
         }
-
-        //future_pool.await();
         return ranges.front().first;
     }
-
 } //namespace
